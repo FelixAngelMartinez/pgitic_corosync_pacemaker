@@ -1,0 +1,64 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# @author Felix Angel Martinez Muela
+
+Vagrant.configure("2") do |config|
+N_Machines = 3 # Always >=1
+  (1..N_Machines).each do |machine_id|
+    if machine_id == 1 #Master
+      config.vm.define "node-#{machine_id}", primary: true, autostart: true do |node|
+        # Provider
+        node.vm.provider "virtualbox" do |vb|
+          vb.memory = "1024"
+          vb.cpus = 2
+          vb.name = "nodo#{machine_id}"
+          vb.gui = false
+        end
+        # Image
+        node.vm.box = "hashicorp/bionic64"
+        # Network
+        node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
+        for port in 5404..5406
+          node.vm.network :forwarded_port, guest: port, host: port, auto_correct: true
+        end
+        # Sync folder
+        node.vm.synced_folder "./shared_folder", "/tmp"
+        # Provision
+        node.vm.provision "ansible" do |ansible|
+            ansible.verbose = "vv"
+            ansible.playbook = "Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo maestro            
+            ansible.host_key_checking = "true"            
+            ansible.limit = "node-#{machine_id}"
+          end   
+      end
+    else  # Slave
+      config.vm.define "node-#{machine_id}",primary: false, autostart: true do |node|
+        # Provider
+        node.vm.provider "virtualbox" do |vb|
+          vb.memory = "1024"
+          vb.cpus = 1
+          vb.name = "nodo#{machine_id}"
+          vb.gui = false
+        end
+        # Image
+        node.vm.box = "hashicorp/bionic64"
+        # Network
+        node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
+        # Sync folder
+        node.vm.synced_folder "./shared_folder", "/tmp"
+        # Provision
+        if machine_id == N_Machines
+          node.vm.provision "ansible" do |ansible|
+            ansible.verbose = "vv"
+            ansible.playbook = "Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo esclavo             
+            ansible.host_key_checking = "true"
+            ansible.limit = "all:!node-1"
+          end
+        end
+      end
+    end
+  
+  end
+
+end
