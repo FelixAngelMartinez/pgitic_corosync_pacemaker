@@ -28,7 +28,7 @@ N_Machines = 3 # Always >=1
         node.vm.provision "ansible" do |ansible|
             ansible.verbose = "vv"
             ansible.playbook = "Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo maestro            
-            ansible.host_key_checking = "true"            
+            ansible.host_key_checking = "false"            
             ansible.limit = "node-#{machine_id}"
           end   
       end
@@ -52,7 +52,7 @@ N_Machines = 3 # Always >=1
           node.vm.provision "ansible" do |ansible|
             ansible.verbose = "vv"
             ansible.playbook = "Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo esclavo             
-            ansible.host_key_checking = "true"
+            ansible.host_key_checking = "false"
             ansible.limit = "all:!node-1"
           end
         end
