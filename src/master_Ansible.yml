@@ -9,38 +9,45 @@
       update_cache: yes
       force_apt_get: yes
       name: "{{ item }}"
+      state: latest
     loop:
       - nginx
       - libqb0
       - fence-agents
       - pacemaker
-      - firewalld
+      #- firewalld
       - ntp
   
-  - name: Iniciar y habilitar el servicio firewalld
-    service:
-      name: firewalld
-      state: started
-      enabled: yes
+  #- name: Iniciar y habilitar el servicio firewalld
+  #  service:
+  #    name: firewalld
+  #    state: started
+  #    enabled: yes
 
   # Con firewalld habilitamos los puertos, y si hay algún cambio reiniciamos el servicio
-  - name: Habilitar puertos 5404, 5405 y 5406 udp
-    firewalld:
-      port: 5404-5406/udp
-      permanent: yes
-      immediate: yes
-      state: enabled
+  #- name: Habilitar puertos 5404, 5405 y 5406 udp
+  #  firewalld:
+  #    port: 5404-5406/udp
+  #    permanent: yes
+  #    immediate: yes
+  #    state: enabled
   
-  - name: Reiniciar el servicio firewalld
-    service:
-      name: firewalld
-      state: restarted
+  #- name: Reiniciar el servicio firewalld
+  #  service:
+  #    name: firewalld
+  #    state: restarted
+
+  - name: Comando iptables
+    command: "iptables -A INPUT  -i eth1 -p udp -m multiport --dports 5404,5405,5406 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"
   
+  - name: Comando iptables 2
+    command: "iptables -A OUTPUT  -o eth1 -p udp -m multiport --sports 5404,5405,5406 -m conntrack --ctstate ESTABLISHED -j ACCEPT"
+
   # Si los puertos no están abiertos el módulo fallará
-  - name: Verificar que los puertos están abiertos
-    command: firewall-cmd --list-ports
-    register: opened_ports
-    failed_when: "'5404-5406/udp' not in opened_ports.stdout"
+  #- name: Verificar que los puertos están abiertos
+  #  command: firewall-cmd --list-ports
+  #  register: opened_ports
+  #  failed_when: "'5404-5406/udp' not in opened_ports.stdout"
 
   - name: Instalar paquete haveged
     apt:
