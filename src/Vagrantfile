@@ -17,6 +17,7 @@ N_Machines = 3 # Always >=1
         end
         # Image
         node.vm.box = "hashicorp/bionic64"
+        node.vm.boot_timeout = 600
         # Network
         node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
         for port in 5404..5406
@@ -28,7 +29,7 @@ N_Machines = 3 # Always >=1
         node.vm.provision "ansible" do |ansible|
             ansible.verbose = "vv"
             ansible.playbook = "Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo maestro            
-            ansible.host_key_checking = "true"            
+            ansible.host_key_checking = "false"            
             ansible.limit = "node-#{machine_id}"
           end   
       end
@@ -43,6 +44,7 @@ N_Machines = 3 # Always >=1
         end
         # Image
         node.vm.box = "hashicorp/bionic64"
+        node.vm.boot_timeout = 600
         # Network
         node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
         # Sync folder
@@ -52,7 +54,7 @@ N_Machines = 3 # Always >=1
           node.vm.provision "ansible" do |ansible|
             ansible.verbose = "vv"
             ansible.playbook = "Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo esclavo             
-            ansible.host_key_checking = "true"
+            ansible.host_key_checking = "false"
             ansible.limit = "all:!node-1"
           end
         end
