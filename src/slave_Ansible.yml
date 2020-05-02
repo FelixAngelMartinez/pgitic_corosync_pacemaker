@@ -1,0 +1,50 @@
+---
+- name: Aprovisionar máquinas
+  hosts: nodo2, nodo3
+  remote_user: vagrant
+  become: yes
+  tasks:
+  - name: Instalar paquetes necesarios
+    apt:
+      update_cache: yes
+      force_apt_get: yes
+      name: "{{ item }}"
+    loop:
+      - libqb0
+      - fence-agents
+      - pacemaker
+      - firewalld
+      - ntp
+
+  - name: Iniciar y habilitar el servicio firewalld
+    service:
+      name: firewalld
+      state: started
+      enabled: yes
+
+  # Con firewalld habilitamos los puertos, y si hay algún cambio reiniciamos el servicio
+  - name: Habilitar puertos 5404, 5405 y 5406 udp
+    firewalld:
+      port: 5404-5406/udp
+      permanent: yes
+      immediate: yes
+      state: enabled
+  
+  - name: Reiniciar el servicio firewalld
+    service:
+      name: firewalld
+      state: restarted
+  
+  # Si los puertos no están abiertos el módulo fallará
+  - name: Verificar que los puertos están abiertos
+    command: firewall-cmd --list-ports
+    register: opened_ports
+    failed_when: "'5404-5406/udp' not in opened_ports.stdout"
+
+  - name: Copiamos authkey de local al servidor secundario en /tmp
+    copy:
+      src: templates/authkey
+      dest: /etc/corosync/
+      owner: root
+      mode: 400
+...

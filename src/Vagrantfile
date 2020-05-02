@@ -1,25 +1,71 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+# @author Felix Angel Martinez Muela
 
-# ¡Completa el archivo con las configuraciones que se indican en los comentarios de más abajo!
-VAGRANTFILE_API_VERSION = "2"
-
-Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "ubuntu/trusty64"
-  # configura red privada con ip fijo
-  config.vm.network :private_network, ip: "192.168.100.100"
-
-  config.vm.provision "ansible" do |ansible|
-    ansible.verbose = "v"
-    # referencia el archivo playbook
-    ansible.playbook = "provision.yml"
-    ansible.host_key_checking = "false"
-    ansible.limit = "all"
-  end
-  config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
-    vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+Vagrant.configure("2") do |config|
+  N_Machines = 3 # Always >= 1
+  (1..N_Machines).each do |machine_id|
+    if machine_id == 1 #Master
+      config.vm.define "nodo#{machine_id}", primary: true, autostart: true do |node|
+        # Provider
+        node.vm.provider "virtualbox" do |vb|
+          vb.memory = "512"
+          vb.cpus = 2
+          vb.name = "nodo#{machine_id}"
+          vb.gui = false
+        end
+        # Image
+        node.vm.box = "ubuntu/trusty64" # Ubuntu 14.04 LTS
+        node.vm.boot_timeout = 600
+        # Network
+        node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
+        #for port in 5404..5406
+        #  node.vm.network :forwarded_port, guest: port, host: port, auto_correct: true
+        #end
+        # Sync folder
+        #node.vm.synced_folder "./shared_folderes/master_shared_folder", "/home/vagrant/shared_file" # Master shared folder
+        # Provision
+        node.vm.provision "ansible" do |ansible|
+            ansible.verbose = "vv"
+            ansible.playbook = "master_Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo maestro            
+            ansible.host_key_checking = "false"            
+            ansible.limit = "nodo#{machine_id}"
+          end   
+      end
+    else  # Slave
+      config.vm.define "nodo#{machine_id}",primary: false, autostart: true do |node|
+        # Provider
+        node.vm.provider "virtualbox" do |vb|
+          vb.memory = "512"
+          vb.cpus = 1
+          vb.name = "nodo#{machine_id}"
+          vb.gui = false
+        end
+        # Image
+        node.vm.box = "ubuntu/trusty64" # Ubuntu 14.04 LTS
+        node.vm.boot_timeout = 600
+        # Network
+        node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
+        # Sync folder
+        #node.vm.synced_folder "./shared_folderes/slave_shared_folder", "/home/vagrant/shared_file" # Slave shared folder
+        # Provision
+        if machine_id == N_Machines
+          node.vm.provision "ansible" do |ansible|
+            ansible.verbose = "vv"
+            ansible.playbook = "slave_Ansible.yml"  # Playbook propio de un esclavo            
+            ansible.host_key_checking = "false"
+            ansible.limit = "all:!nodo1"
+          end
+          # Aprovisionamiento con dependencias entre nodos máster y esclavos
+          node.vm.provision "ansible" do |ansible|
+            ansible.verbose = "vv"
+            ansible.playbook = "mixed_Ansible.yml"  # Playbook con jugadas mixtas            
+            ansible.host_key_checking = "false"
+            ansible.limit = "all"
+          end
+        end
+      end
+    end        
   end
 end
