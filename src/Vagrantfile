@@ -17,6 +17,7 @@ N_Machines = 3 # Always >=1
         end
         # Image
         node.vm.box = "hashicorp/bionic64"
+        node.vm.boot_timeout = 600
         # Network
         node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
         for port in 5404..5406
@@ -43,6 +44,7 @@ N_Machines = 3 # Always >=1
         end
         # Image
         node.vm.box = "hashicorp/bionic64"
+        node.vm.boot_timeout = 600
         # Network
         node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
         # Sync folder
