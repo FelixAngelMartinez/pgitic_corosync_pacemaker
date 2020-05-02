@@ -1,64 +1,25 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# @author Felix Angel Martinez Muela
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 
-Vagrant.configure("2") do |config|
-N_Machines = 3 # Always >=1
-  (1..N_Machines).each do |machine_id|
-    if machine_id == 1 #Master
-      config.vm.define "node-#{machine_id}", primary: true, autostart: true do |node|
-        # Provider
-        node.vm.provider "virtualbox" do |vb|
-          vb.memory = "1024"
-          vb.cpus = 2
-          vb.name = "nodo#{machine_id}"
-          vb.gui = false
-        end
-        # Image
-        node.vm.box = "hashicorp/bionic64"
-        # Network
-        node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
-        for port in 5404..5406
-          node.vm.network :forwarded_port, guest: port, host: port, auto_correct: true
-        end
-        # Sync folder
-        node.vm.synced_folder "./shared_folder", "/tmp"
-        # Provision
-        node.vm.provision "ansible" do |ansible|
-            ansible.verbose = "vv"
-            ansible.playbook = "Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo maestro            
-            ansible.host_key_checking = "false"            
-            ansible.limit = "node-#{machine_id}"
-          end   
-      end
-    else  # Slave
-      config.vm.define "node-#{machine_id}",primary: false, autostart: true do |node|
-        # Provider
-        node.vm.provider "virtualbox" do |vb|
-          vb.memory = "1024"
-          vb.cpus = 1
-          vb.name = "nodo#{machine_id}"
-          vb.gui = false
-        end
-        # Image
-        node.vm.box = "hashicorp/bionic64"
-        # Network
-        node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
-        # Sync folder
-        node.vm.synced_folder "./shared_folder", "/tmp"
-        # Provision
-        if machine_id == N_Machines
-          node.vm.provision "ansible" do |ansible|
-            ansible.verbose = "vv"
-            ansible.playbook = "Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo esclavo             
-            ansible.host_key_checking = "false"
-            ansible.limit = "all:!node-1"
-          end
-        end
-      end
-    end
-  
+# ¡Completa el archivo con las configuraciones que se indican en los comentarios de más abajo!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "ubuntu/trusty64"
+  # configura red privada con ip fijo
+  config.vm.network :private_network, ip: "192.168.100.100"
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.verbose = "v"
+    # referencia el archivo playbook
+    ansible.playbook = "provision.yml"
+    ansible.host_key_checking = "false"
+    ansible.limit = "all"
   end
-
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+  end
 end
