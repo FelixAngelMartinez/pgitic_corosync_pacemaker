@@ -1,0 +1,9 @@
+sudo nano /etc/corosync/corosync.conf
+sudo service corosync start
+sudo corosync-cmapctl | grep members
+
+sudo tail /var/log/corosync/corosync.log
+
+sudo service --status-all | grep corosyn*
+
+sudo nano /etc/network/interfaces

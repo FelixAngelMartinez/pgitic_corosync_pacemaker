@@ -4,7 +4,7 @@
 # @author Felix Angel Martinez Muela
 
 Vagrant.configure("2") do |config|
-  N_Machines = 2 # Always >= 1
+  N_Machines = 3 # Always >= 1
   (1..N_Machines).each do |machine_id|
     if machine_id == 1 #Master
       config.vm.define "nodo#{machine_id}", primary: true, autostart: true do |node|
@@ -19,7 +19,7 @@ Vagrant.configure("2") do |config|
         node.vm.box = "ubuntu/trusty64" # Ubuntu 14.04 LTS
         node.vm.boot_timeout = 600
         # Network
-        node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
+        node.vm.network "private_network", ip: "192.168.128.#{machine_id}"
         #for port in 5404..5406
         #  node.vm.network :forwarded_port, guest: port, host: port, auto_correct: true
         #end
@@ -27,7 +27,7 @@ Vagrant.configure("2") do |config|
         node.vm.synced_folder "./shared_folderes/master_shared_folder", "/home/vagrant/shared_file" # Master shared folder
         # Provision
         node.vm.provision "ansible" do |ansible|
-            ansible.verbose = "vv"
+            ansible.verbose = "v"
             ansible.playbook = "master_Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo maestro            
             ansible.host_key_checking = "false"            
             ansible.limit = "nodo#{machine_id}"
@@ -46,20 +46,20 @@ Vagrant.configure("2") do |config|
         node.vm.box = "ubuntu/trusty64" # Ubuntu 14.04 LTS
         node.vm.boot_timeout = 600
         # Network
-        node.vm.network "private_network", ip: "192.168.100.10#{machine_id}"
+        node.vm.network "private_network", ip: "192.168.128.#{machine_id}"
         # Sync folder
         node.vm.synced_folder "./shared_folderes/slave_shared_folder", "/home/vagrant/shared_file" # Slave shared folder
         # Provision
         if machine_id == N_Machines
           node.vm.provision "ansible" do |ansible|
-            ansible.verbose = "vv"
+            ansible.verbose = "v"
             ansible.playbook = "slave_Ansible.yml"  # Playbook propio de un esclavo            
             ansible.host_key_checking = "false"
             ansible.limit = "all:!nodo1"
           end
           # Aprovisionamiento con dependencias entre nodos máster y esclavos
           node.vm.provision "ansible" do |ansible|
-            ansible.verbose = "vv"
+            ansible.verbose = "v"
             ansible.playbook = "mixed_Ansible.yml"  # Playbook con jugadas mixtas            
             ansible.host_key_checking = "false"
             ansible.limit = "all"
