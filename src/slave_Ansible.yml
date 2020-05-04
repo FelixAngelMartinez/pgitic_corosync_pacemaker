@@ -17,11 +17,37 @@
       - ntp
 
   ### Configure Firewall ###
-  - name: Comando iptables
-    command: "iptables -A INPUT  -i eth1 -p udp -m multiport --dports 5404,5405,5406 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"
-  
-  - name: Comando iptables 2
-    command: "iptables -A OUTPUT  -o eth1 -p udp -m multiport --sports 5404,5405,5406 -m conntrack --ctstate ESTABLISHED -j ACCEPT"
+  # Equivalente al comando: 
+  # iptables -A INPUT  -i eth1 -p udp -m multiport --dports 5404,5405,5406 
+  #          -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+  - name: INPUT iptable
+    iptables:
+      chain: INPUT
+      in_interface: eth1
+      protocol: udp
+      destination_port: "{{ item }}"
+      ctstate: NEW,ESTABLISHED
+      jump: ACCEPT
+    loop:
+      - 5404
+      - 5405
+      - 5406
+
+  # Equivalente al comando:
+  # iptables -A OUTPUT  -o eth1 -p udp -m multiport --sports 5404,5405,5406 
+  #          -m conntrack --ctstate ESTABLISHED -j ACCEPT
+  - name: OUTPUT iptable
+    iptables:
+      chain: OUTPUT
+      out_interface: eth1
+      protocol: udp
+      source_port: "{{ item }}"
+      ctstate: ESTABLISHED
+      jump: ACCEPT
+    loop:
+      - 5404
+      - 5405
+      - 5406
 
   - name: Copiamos authkey de local al servidor secundario en /tmp
     copy:
