@@ -1,6 +1,6 @@
 ---
 - name: Aprovisionar máquinas
-  hosts: nodo2, nodo3
+  hosts: all,!nodo1
   remote_user: vagrant
   become: yes
   tasks:
@@ -29,9 +29,9 @@
       ctstate: NEW,ESTABLISHED
       jump: ACCEPT
     loop:
-      - 5404
-      - 5405
-      - 5406
+      - "5404"
+      - "5405"
+      - "5406"
 
   # Equivalente al comando:
   # iptables -A OUTPUT  -o eth1 -p udp -m multiport --sports 5404,5405,5406 
@@ -45,9 +45,9 @@
       ctstate: ESTABLISHED
       jump: ACCEPT
     loop:
-      - 5404
-      - 5405
-      - 5406
+      - "5404"
+      - "5405"
+      - "5406"
 
   - name: Copiamos authkey de local al servidor secundario en /tmp
     copy:

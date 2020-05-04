@@ -30,9 +30,9 @@
       ctstate: NEW,ESTABLISHED
       jump: ACCEPT
     loop:
-      - 5404
-      - 5405
-      - 5406
+      - "5404"
+      - "5405"
+      - "5406"
 
   # Equivalente al comando:
   # iptables -A OUTPUT  -o eth1 -p udp -m multiport --sports 5404,5405,5406 
@@ -46,9 +46,9 @@
       ctstate: ESTABLISHED
       jump: ACCEPT
     loop:
-      - 5404
-      - 5405
-      - 5406
+      - "5404"
+      - "5405"
+      - "5406"
 
   ### Configure Corosync ###
   # Create Cluster Authorization Key
