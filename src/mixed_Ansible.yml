@@ -1,40 +1,20 @@
 ---
 - name: Aprovisionar máquinas
-  hosts: nodo1
+  hosts: all
   remote_user: vagrant
   become: yes
   tasks:
-  - include_vars: ./vars/main.yml
+  ### Configure Corosync Cluster
   - name: Modificamos el fichero de configuración de corosync desde plantilla .j2
     template:
-      src: templates/corosync_1.j2
+      src: templates/corosync.j2
       dest: /etc/corosync/corosync.conf
-- name: Aprovisionar máquinas
-  hosts: nodo2
-  remote_user: vagrant
-  become: yes
-  tasks:
-  - include_vars: ./vars/main.yml  
-  - name: Modificamos el fichero de configuración de corosync desde plantilla .j2
-    template:
-      src: templates/corosync_2.j2
-      dest: /etc/corosync/corosync.conf
-- name: Aprovisionar máquinas
-  hosts: nodo2
-  remote_user: vagrant
-  become: yes
-  tasks:
-  - include_vars: ./vars/main.yml  
-  - name: Modificamos el fichero de configuración de corosync desde plantilla .j2
-    template:
-      src: templates/corosync_3.j2
-      dest: /etc/corosync/corosync.conf      
+     
 - name: Aprovisionar máquinas
   hosts: all
   remote_user: vagrant
   become: yes
   tasks:
-  - include_vars: ./vars/main.yml
   - name: Creamos el fichero pcmk desde plantilla
     template:
       src: templates/pacemaker.conf
@@ -44,7 +24,7 @@
     lineinfile:
       path: /etc/default/corosync
       regexp: '^START='
-      line: 'Start=yes'
+      line: 'START=yes'
 
   - name: Reiniciar el servicio corosync
     service:
@@ -52,13 +32,23 @@
       state: restarted
 
   ### Start and Configure Pacemaker ###
-  - name:
+  - name: Ejecutar pacemaker desde el inicio
     command: update-rc.d pacemaker defaults 20 01
 
   - name: Iniciar el servicio pacemaker
     service:
       name: pacemaker
       state: restarted
-  
 
+  - name: Comprobar estado nodos
+    command: crm status
+    register: crm_status
+    failed_when: "('3 Nodes configured' or 'Online: [ nodo1 nodo2 nodo3 ]') not in crm_status.stdout"
+  
+  ### Configure Cluster Properties ###
+  - name: Desactivar modo Stonith
+    command: crm configure property stonith-enabled=false
+
+  - name: Desactivar mensajes quorum en logs
+    command: crm configure property no-quorum-policy=ignore
 ...

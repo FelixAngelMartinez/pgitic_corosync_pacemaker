@@ -4,7 +4,7 @@ totem {
   transport: udpu
   interface {
     ringnumber: 0
-    bindnetaddr: {{ server_private_IP_address }}
+    bindnetaddr: 192.168.128.0
     broadcast: yes
     mcastport: 5405
   }
@@ -17,14 +17,19 @@ quorum {
 
 nodelist {
   node {
-    ring0_addr: {{ primary_private_IP_address }}
-    name: primary
+    ring0_addr: 192.168.128.101
+    name: nodo1
     nodeid: 1
   }
   node {
-    ring0_addr: {{ secondary_private_IP_address }}
-    name: secondary
+    ring0_addr: 192.168.128.102
+    name: nodo2
     nodeid: 2
+  }
+  node {
+    ring0_addr: 192.168.128.103
+    name: nodo3
+    nodeid: 3
   }
 }
 
