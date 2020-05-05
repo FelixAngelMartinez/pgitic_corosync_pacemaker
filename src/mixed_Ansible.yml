@@ -1,0 +1,38 @@
+---
+- name: Aprovisionar máquinas
+  hosts: all
+  remote_user: vagrant
+  become: yes
+  tasks:
+  ### Configure Corosync Cluster
+  - name: Modificamos el fichero de configuración de corosync desde plantilla .j2
+    template:
+      src: templates/corosync.j2
+      dest: /etc/corosync/corosync.conf
+     
+  - name: Creamos el fichero pcmk desde plantilla
+    template:
+      src: templates/pacemaker.conf
+      dest: /etc/corosync/service.d/pcmk
+
+  - name: Cambiar linea de configuración para iniciar corosync
+    lineinfile:
+      path: /etc/default/corosync
+      regexp: '^START='
+      line: 'START=yes'
+
+  - name: Reiniciar el servicio corosync
+    service:
+      name: corosync
+      state: restarted
+
+  ### Start and Configure Pacemaker ###
+  - name: Ejecutar pacemaker desde el inicio
+    command: update-rc.d pacemaker defaults 20 01
+
+  - name: Iniciar el servicio pacemaker
+    service:
+      name: pacemaker
+      state: restarted
+
+...
