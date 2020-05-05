@@ -4,7 +4,7 @@ Project for the subject called Planing and Management of ITC of the Master's deg
 * **Vagrant**
 * **Corosync**
 * **Pacemaker**
-This guide has been made to execute it in **Ubuntu 19**.<br />
+This guide has been made to execute it on **Ubuntu 18.04 LTS**.<br />
 # Prerequisites
 ## Ansible installation:
 [Official documentation of Ansible's installation](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#)
