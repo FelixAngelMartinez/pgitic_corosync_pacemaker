@@ -3,6 +3,26 @@
   hosts: all
   remote_user: vagrant
   become: yes
+  pre_tasks:
+  - name: Generar claves
+    openssh_keypair:
+      path: /home/vagrant/.ssh/id_rsa
+
+  - name: Fetch keys
+    fetch:
+      src: /home/vagrant/.ssh/id_rsa.pub
+      dest: "keys/{{ ansible_facts['eth1']['ipv4']['address'] }}-id_rsa.pub"
+      flat: yes
+
+  - name: Copiar claves SSH entre nodos
+    authorized_key:
+      user: vagrant
+      path: /home/vagrant/.ssh/authorized_keys
+      state: present
+      key: "{{ lookup('file', item) }}"
+    with_fileglob:
+      - "keys/*.pub"
+
   tasks:
   ### Configure Corosync Cluster
   - name: Modificamos el fichero de configuración de corosync desde plantilla .j2

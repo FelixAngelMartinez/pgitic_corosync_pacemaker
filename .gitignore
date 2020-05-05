@@ -14,5 +14,8 @@
 ### Vagrant Patch ###
 *.box
 
+### Pub keys ###
+*.pub
+
 # End of https://www.gitignore.io/api/ansible,vagrant
 

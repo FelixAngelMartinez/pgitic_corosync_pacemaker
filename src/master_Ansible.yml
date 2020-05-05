@@ -3,6 +3,23 @@
   hosts: nodo1
   remote_user: vagrant
   become: yes
+  pre_tasks:
+  - name: Configurar fichero hosts
+    template:
+      src: templates/hosts.j2
+      dest: /etc/hosts
+
+  - name: Configurar fichero sshd_config
+    lineinfile:
+      path: /etc/ssh/sshd_config
+      regexp: '^PermitRootLogin'
+      line: 'PermitRootLogin yes'
+
+  - name: Reiniciar el servicio ssh
+    service:
+      name: ssh
+      state: restarted
+
   tasks:
   - name: Instalar paquetes necesarios
     apt:

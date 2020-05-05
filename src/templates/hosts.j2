@@ -1,0 +1,3 @@
+{% for i in range(1,( CLUSTER_NODES_NUMBER | int ) + 1 ) %}
+192.168.128.10{{ i }} nodo{{ i }}
+{% endfor %}

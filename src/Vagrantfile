@@ -25,6 +25,10 @@ Vagrant.configure("2") do |config|
         node.vm.provision "ansible" do |ansible|
             ansible.verbose = "v"
             ansible.playbook = "master_Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo maestro            
+            # Lanzamos el playbook sobre n nodos del cluster
+            ansible.extra_vars = {
+              CLUSTER_NODES_NUMBER: "#{N_Machines}"
+            }
             ansible.host_key_checking = "false"            
             ansible.limit = "nodo#{machine_id}"
           end   
@@ -50,6 +54,10 @@ Vagrant.configure("2") do |config|
           node.vm.provision "ansible" do |ansible|
             ansible.verbose = "v"
             ansible.playbook = "slave_Ansible.yml"  # Playbook propio de un esclavo            
+            # Lanzamos el playbook sobre n nodos del cluster
+            ansible.extra_vars = {
+              CLUSTER_NODES_NUMBER: "#{N_Machines}"
+            }
             ansible.host_key_checking = "false"
             ansible.limit = "all:!nodo1"
           end
