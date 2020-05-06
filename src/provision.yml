@@ -1,0 +1,188 @@
+---
+### PLAY 1 ###
+- name: Aprovisionar nodos con paquetes y configuraciones básicas
+  hosts: all
+  remote_user: vagrant
+  become: yes
+  ### Tareas de configuración base ###
+  pre_tasks:
+  - name: Configurar fichero hosts
+    template:
+      src: templates/hosts.j2
+      dest: /etc/hosts
+
+  - name: Configurar fichero sshd_config
+    lineinfile:
+      path: /etc/ssh/sshd_config
+      regexp: '^PermitRootLogin'
+      line: 'PermitRootLogin yes'
+
+  - name: Generar claves
+    openssh_keypair:
+      path: /home/vagrant/.ssh/id_rsa
+      owner: vagrant
+      group: vagrant
+
+  - name: Descargar claves públicas de los nodos
+    fetch:
+      src: /home/vagrant/.ssh/id_rsa.pub
+      dest: "keys/{{ ansible_facts['eth1']['ipv4']['address'] }}-id_rsa.pub"
+      flat: yes
+
+  - name: Copiar claves SSH a los nodos
+    authorized_key:
+      user: vagrant
+      path: /home/vagrant/.ssh/authorized_keys
+      state: present
+      key: "{{ lookup('file', item) }}"
+    with_fileglob:
+      - "keys/*.pub"
+
+  - name: Reiniciar el servicio ssh
+    service:
+      name: ssh
+      state: restarted
+
+  ### Instalación de paquetes y configuración de reglas del firewall ###   
+  tasks:
+  - name: Instalar paquetes necesarios
+    apt:
+      update_cache: yes
+      force_apt_get: yes
+      name: "{{ item }}"
+      state: latest
+    loop:
+      - nginx
+      - libqb0
+      - fence-agents
+      - pacemaker
+      - ntp
+  
+  - name: Configurar reglas de entrada del firewall con iptable
+    iptables:
+      chain: INPUT
+      in_interface: eth1
+      protocol: udp
+      destination_port: "{{ item }}"
+      ctstate: NEW,ESTABLISHED
+      jump: ACCEPT
+    loop:
+      - "5404"
+      - "5405"
+      - "5406"
+
+  - name: Configurar reglas de salida del firewall con iptable
+    iptables:
+      chain: OUTPUT
+      out_interface: eth1
+      protocol: udp
+      source_port: "{{ item }}"
+      ctstate: ESTABLISHED
+      jump: ACCEPT
+    loop:
+      - "5404"
+      - "5405"
+      - "5406"
+
+### PLAY 2 ###
+- name: Configurar clave de autenticación de Corosync en el nodo 1
+  hosts: nodo1
+  remote_user: vagrant
+  become: yes
+  tasks:
+  # Paquete haveged necesario para generar la clave de autenticación
+  - name: Instalar paquete haveged
+    apt:
+      force_apt_get: yes
+      name: haveged
+  
+  - name: Generar la clave de autenticación corosync
+    command: corosync-keygen
+
+  # Tras generar la clave, no necesitaremos el paquete haveged
+  - name: Desinstalar paquete haveged
+    apt:
+      force_apt_get: yes
+      autoclean: yes
+      name: haveged
+      state: absent
+
+  - name: Descargar authkey del nodo1 en local
+    fetch:
+      src: /etc/corosync/authkey
+      dest: templates/authkey
+      flat: yes
+
+### PLAY 3 ###
+- name: Configurar cluster Corosync y Pacemaker
+  hosts: all
+  remote_user: vagrant
+  become: yes
+  ### Configurar cluster Corosync ###
+  tasks:
+  - name: Copiamos authkey de local al servidor secundario en /tmp
+    copy:
+      src: templates/authkey
+      dest: /etc/corosync/
+      owner: root
+      mode: 400
+
+  - name: Modificar el fichero de configuración de corosync desde plantilla .j2
+    template:
+      src: templates/corosync.j2
+      dest: /etc/corosync/corosync.conf
+     
+  - name: Crear el fichero pcmk desde plantilla
+    template:
+      src: templates/pacemaker.conf
+      dest: /etc/corosync/service.d/pcmk
+
+  - name: Cambiar linea de configuración para iniciar corosync
+    lineinfile:
+      path: /etc/default/corosync
+      regexp: '^START='
+      line: 'START=yes'
+
+  - name: Reiniciar el servicio corosync
+    service:
+      name: corosync
+      state: restarted
+
+  - name: Ejecutar pacemaker desde el inicio
+    command: update-rc.d pacemaker defaults 20 01
+
+  - name: Iniciar el servicio pacemaker
+    service:
+      name: pacemaker
+      state: restarted
+
+### PLAY 4 ###
+- name: Configurar Pacemaker
+  hosts: nodo1
+  remote_user: vagrant
+  become: yes
+  ### Configurar cluster Pacemaker ###
+  tasks:
+  - name: Configuración crm modo stonith deshabilitado
+    command: "crm configure property stonith-enabled=no"
+ 
+  - name: Configuración crm ignorar política no quorum
+    command: "crm configure property no-quorum-policy=ignore"
+ 
+  - name: Configuración crm stickiness de recursos
+    command: "crm configure property default-resource-stickiness=100"
+ 
+  - name: IP-nginx1
+    command: 'crm configure primitive IP-nginx ocf:heartbeat:IPaddr2 params ip="192.168.128.200" nic="eth1" cidr_netmask="24" meta migration-threshold=2 op monitor interval=20 timeout=60 on-fail=restart -F'
+
+  - name: IP-nginx2
+    command: "crm configure primitive Nginx-rsc ocf:heartbeat:nginx meta migration-threshold=2 op monitor interval=20 timeout=60 on-fail=restart -F"
+ 
+  - name: IP-nginx3
+    command: 'crm configure colocation lb-loc inf: IP-nginx Nginx-rsc -F'
+ 
+  - name: IP-nginx4
+    command: "crm configure order lb-ord inf: IP-nginx Nginx-rsc -F"
+ 
+  - name: IP-nginx5
+    command: "crm configure commit -F"

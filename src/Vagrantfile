@@ -5,7 +5,7 @@ Vagrant.configure("2") do |config|
   # Número de nodos que tendrá el cluster
   N_Machines = 3 # N Nodos >= 1 && <=9
   (1..N_Machines).each do |machine_id|
-    if machine_id == 1 #Master
+    if machine_id == 1 # nodo1
       config.vm.define "nodo#{machine_id}", primary: true, autostart: true do |node|
         # Provider
         node.vm.provider "virtualbox" do |vb|
@@ -20,20 +20,9 @@ Vagrant.configure("2") do |config|
         # Network
         node.vm.network "private_network", ip: "192.168.128.10#{machine_id}"
         # Sync folder
-        node.vm.synced_folder "./shared_folders/master_shared_folder", "/home/vagrant/shared_file" # Master shared folder
-        # Provision
-        node.vm.provision "ansible" do |ansible|
-            ansible.verbose = "v"
-            ansible.playbook = "master_Ansible.yml"  # Posibilidad de añadir un playbook distinto al nodo maestro            
-            # Lanzamos el playbook sobre n nodos del cluster
-            ansible.extra_vars = {
-              CLUSTER_NODES_NUMBER: "#{N_Machines}"
-            }
-            ansible.host_key_checking = "false"            
-            ansible.limit = "nodo#{machine_id}"
-          end   
+        node.vm.synced_folder "./shared_folders/master_shared_folder", "/home/vagrant/shared_file" # Master shared folder   
       end
-    else  # Slave
+    else  # nodo2, nodo3...
       config.vm.define "nodo#{machine_id}",primary: false, autostart: true do |node|
         # Provider
         node.vm.provider "virtualbox" do |vb|
@@ -49,28 +38,18 @@ Vagrant.configure("2") do |config|
         node.vm.network "private_network", ip: "192.168.128.10#{machine_id}"
         # Sync folder
         node.vm.synced_folder "./shared_folders/slave_shared_folder", "/home/vagrant/shared_file" # Slave shared folder
-        # Provision all slaves at the same time
+        # Aprovisionar todos los nodos con Ansible
         if machine_id == N_Machines
           node.vm.provision "ansible" do |ansible|
             ansible.verbose = "v"
-            ansible.playbook = "slave_Ansible.yml"  # Playbook propio de un esclavo            
-            # Lanzamos el playbook sobre n nodos del cluster
-            ansible.extra_vars = {
-              CLUSTER_NODES_NUMBER: "#{N_Machines}"
-            }
-            ansible.host_key_checking = "false"
-            ansible.limit = "all:!nodo1"
-          end
-          # Aprovisionamiento con dependencias entre nodos máster y esclavos
-          node.vm.provision "ansible" do |ansible|
-            ansible.verbose = "v"
-            ansible.playbook = "mixed_Ansible.yml"  # Playbook con jugadas mixtas            
+            ansible.playbook = "provision.yml"            
             # Lanzamos el playbook sobre n nodos del cluster
             ansible.extra_vars = {
               CLUSTER_NODES_NUMBER: "#{N_Machines}"
             }
             ansible.host_key_checking = "false"
             ansible.limit = "all"
+            ansible.start_at_task = "IP-nginx1"
           end
         end
       end
