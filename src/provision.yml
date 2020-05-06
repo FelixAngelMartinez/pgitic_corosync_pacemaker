@@ -158,7 +158,7 @@
 
 ### PLAY 4 ###
 - name: Configurar Pacemaker
-  hosts: nodo1
+  hosts: all
   remote_user: vagrant
   become: yes
   ### Configurar cluster Pacemaker ###
@@ -173,16 +173,14 @@
     command: "crm configure property default-resource-stickiness=100"
  
   - name: IP-nginx1
-    command: 'crm configure primitive IP-nginx ocf:heartbeat:IPaddr2 params ip="192.168.128.200" nic="eth1" cidr_netmask="24" meta migration-threshold=2 op monitor interval=20 timeout=60 on-fail=restart -F'
+    command: 'crm -F configure primitive IP-nginx ocf:heartbeat:IPaddr2 params ip="192.168.128.110" nic="eth1" cidr_netmask="24" meta migration-threshold=2 op monitor interval=20 timeout=60 on-fail=restart'
 
   - name: IP-nginx2
-    command: "crm configure primitive Nginx-rsc ocf:heartbeat:nginx meta migration-threshold=2 op monitor interval=20 timeout=60 on-fail=restart -F"
+    command: "crm -F configure primitive Nginx-rsc ocf:heartbeat:nginx meta migration-threshold=2 op monitor interval=20 timeout=60 on-fail=restart"
  
   - name: IP-nginx3
-    command: 'crm configure colocation lb-loc inf: IP-nginx Nginx-rsc -F'
+    command: 'crm -F configure colocation lb-loc inf: IP-nginx Nginx-rsc'
  
   - name: IP-nginx4
-    command: "crm configure order lb-ord inf: IP-nginx Nginx-rsc -F"
+    command: "crm -F configure order lb-ord inf: IP-nginx Nginx-rsc"
  
-  - name: IP-nginx5
-    command: "crm configure commit -F"

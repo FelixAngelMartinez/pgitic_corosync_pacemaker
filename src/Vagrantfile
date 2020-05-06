@@ -49,7 +49,7 @@ Vagrant.configure("2") do |config|
             }
             ansible.host_key_checking = "false"
             ansible.limit = "all"
-            ansible.start_at_task = "IP-nginx1"
+            # ansible.start_at_task = "IP-nginx1"
           end
         end
       end
