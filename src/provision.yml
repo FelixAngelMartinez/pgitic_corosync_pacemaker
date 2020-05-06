@@ -155,32 +155,65 @@
     service:
       name: pacemaker
       state: restarted
+  # Esperamos 1 minuto a que se haya iniciado bien el servicio pacemaker
+  - name: Sleep 1 minuto
+    wait_for:
+      timeout: 60
+    delegate_to: localhost
+    become: no
 
 ### PLAY 4 ###
 - name: Configurar Pacemaker
-  hosts: all
+  hosts: nodo1
   remote_user: vagrant
   become: yes
   ### Configurar cluster Pacemaker ###
   tasks:
-  - name: Configuración crm modo stonith deshabilitado
+  - name: Configurar crm modo stonith deshabilitado
     command: "crm configure property stonith-enabled=no"
  
-  - name: Configuración crm ignorar política no quorum
+  - name: Configurar crm ignorar política no quorum
     command: "crm configure property no-quorum-policy=ignore"
  
-  - name: Configuración crm stickiness de recursos
+  - name: Configurar crm stickiness de recursos
     command: "crm configure property default-resource-stickiness=100"
  
-  - name: IP-nginx1
+  - name: Configurar recurso IP-nginx
     command: 'crm -F configure primitive IP-nginx ocf:heartbeat:IPaddr2 params ip="192.168.128.110" nic="eth1" cidr_netmask="24" meta migration-threshold=2 op monitor interval=20 timeout=60 on-fail=restart'
 
-  - name: IP-nginx2
+  - name: Configurar recurso Nginx-src
     command: "crm -F configure primitive Nginx-rsc ocf:heartbeat:nginx meta migration-threshold=2 op monitor interval=20 timeout=60 on-fail=restart"
  
-  - name: IP-nginx3
+  - name: Asegurar que ambos recursos siempre se ejecutan en el mismo nodo
     command: 'crm -F configure colocation lb-loc inf: IP-nginx Nginx-rsc'
  
-  - name: IP-nginx4
+  - name: Asegurar que la dirección IP está disponible 
     command: "crm -F configure order lb-ord inf: IP-nginx Nginx-rsc"
  
+  ### Fencing agents
+  - name: Test fencing agents
+    command: "crm configure cib new fencing"
+
+  - name: Habilitar modo Stonith
+    command: "crm configure property stonith-enabled=yes"
+
+  - name: 
+    command: "crm -F configure primitive fence_nodo1 stonith:fence_virsh params ipaddr=192.168.128.1 port=VMnodo1 action=off login=root passwd=root op monitor interval=60s"
+
+  - name:
+    command: "crm -F configure primitive fence_nodo2 stonith:fence_virsh params ipaddr=192.168.128.1 port=VMnodo2 action=off login=root passwd=root delay=15 op monitor interval=60s"
+
+  - name: 
+    command: "crm -F configure location l_fence_nodo1 fence_nodo1 -inf: nodo1"
+
+  - name:
+    command: "crm -F configure location l_fence_nodo2 fence_nodo2 -inf: nodo2"
+
+  - name:
+    command: "crm -F configure commit"
+
+  - name:
+    command: "crm configure up"  
+
+  - name:
+    command: "crm configure cib cibstatus simulate"
