@@ -3,7 +3,7 @@
 
 Vagrant.configure("2") do |config|
   # Número de nodos que tendrá el cluster
-  N_Machines = 3 # N Nodos >= 1 && <=9
+  N_Machines = 5 # N Nodos >= 1 && <=9
   (1..N_Machines).each do |machine_id|
     if machine_id == 1 # nodo1
       config.vm.define "nodo#{machine_id}", primary: true, autostart: true do |node|
