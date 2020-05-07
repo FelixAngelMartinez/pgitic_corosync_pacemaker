@@ -195,25 +195,38 @@
     command: "crm configure cib new fencing"
 
   - name: Habilitar modo Stonith
-    command: "crm configure property stonith-enabled=yes"
+    command: "crm -F configure property stonith-enabled=yes"
 
-  - name: 
-    command: "crm -F configure primitive fence_nodo1 stonith:fence_virsh params ipaddr=192.168.128.1 port=VMnodo1 action=off login=root passwd=root op monitor interval=60s"
+  - name: Generar script crm configurar fences desde plantilla j2
+    template: 
+      src: templates/crm_configure_fence.j2
+      dest: scripts/crm_configure_fence.sh
+    delegate_to: localhost
+    become: no
 
-  - name:
-    command: "crm -F configure primitive fence_nodo2 stonith:fence_virsh params ipaddr=192.168.128.1 port=VMnodo2 action=off login=root passwd=root delay=15 op monitor interval=60s"
+  - name: Ejecutar script generado
+    script: scripts/crm_configure_fence.sh
+      
+  # - name:  Fence1
+  #   command: "crm -F configure primitive fence_nodo1 stonith:fence_virsh params ipaddr=192.168.128.101 port=22 action=off login=vagrant passwd=vagrant op monitor interval=60s"
 
-  - name: 
-    command: "crm -F configure location l_fence_nodo1 fence_nodo1 -inf: nodo1"
+  # - name:  Fence2
+  #   command: "crm -F configure primitive fence_nodo2 stonith:fence_virsh params ipaddr=192.168.128.102 port=22 action=off login=vagrant passwd=vagrant delay=15 op monitor interval=60s"
 
-  - name:
-    command: "crm -F configure location l_fence_nodo2 fence_nodo2 -inf: nodo2"
+  # - name:  Fence3
+  #   command: "crm -F configure primitive fence_nodo3 stonith:fence_virsh params ipaddr=192.168.128.103 port=22 action=off login=vagrant passwd=vagrant delay=15 op monitor interval=60s"
 
-  - name:
+  # - name: Fence Location 1
+  #   command: "crm -F configure location l_fence_nodo1 fence_nodo1 -inf: nodo1"
+
+  # - name: Fence Location 2
+  #   command: "crm -F configure location l_fence_nodo2 fence_nodo2 -inf: nodo2"
+
+  # - name: Fence Location 3
+  #   command: "crm -F configure location l_fence_nodo3 fence_nodo3 -inf: nodo3"
+
+  - name: Commit
     command: "crm -F configure commit"
 
-  - name:
-    command: "crm configure up"  
-
-  - name:
-    command: "crm configure cib cibstatus simulate"
+  - name: Up
+    command: "crm configure up"

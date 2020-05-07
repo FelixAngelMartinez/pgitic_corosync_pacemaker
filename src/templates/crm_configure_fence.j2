@@ -1,0 +1,7 @@
+sudo crm -F configure primitive fence_nodo1 stonith:fence_virsh params ipaddr=192.168.128.101 port=22 action=off login=vagrant passwd=vagrant op monitor interval=60s
+{% for i in range(2,( CLUSTER_NODES_NUMBER | int ) + 1 ) %}
+sudo crm -F configure primitive fence_nodo{{ i }} stonith:fence_virsh params ipaddr=192.168.128.10{{ i }} port=22 action=off login=vagrant passwd=vagrant delay=15 op monitor interval=60s
+{% endfor %}
+{% for i in range(1,( CLUSTER_NODES_NUMBER | int ) + 1 ) %}
+sudo crm -F configure location l_fence_nodo{{ i }} fence_nodo{{ i }} -inf: nodo{{ i }}
+{% endfor %}
