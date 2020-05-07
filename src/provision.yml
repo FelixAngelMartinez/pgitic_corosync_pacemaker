@@ -197,6 +197,14 @@
   - name: Habilitar modo Stonith
     command: "crm -F configure property stonith-enabled=yes"
 
+  - name: Crear carpeta local para scripts
+    file:
+      path: scripts/
+      state: directory
+      mode: '0755'
+    delegate_to: localhost
+    become: no
+
   - name: Generar script crm configurar fences desde plantilla j2
     template: 
       src: templates/crm_configure_fence.j2
@@ -206,25 +214,7 @@
 
   - name: Ejecutar script generado
     script: scripts/crm_configure_fence.sh
-      
-  # - name:  Fence1
-  #   command: "crm -F configure primitive fence_nodo1 stonith:fence_virsh params ipaddr=192.168.128.101 port=22 action=off login=vagrant passwd=vagrant op monitor interval=60s"
-
-  # - name:  Fence2
-  #   command: "crm -F configure primitive fence_nodo2 stonith:fence_virsh params ipaddr=192.168.128.102 port=22 action=off login=vagrant passwd=vagrant delay=15 op monitor interval=60s"
-
-  # - name:  Fence3
-  #   command: "crm -F configure primitive fence_nodo3 stonith:fence_virsh params ipaddr=192.168.128.103 port=22 action=off login=vagrant passwd=vagrant delay=15 op monitor interval=60s"
-
-  # - name: Fence Location 1
-  #   command: "crm -F configure location l_fence_nodo1 fence_nodo1 -inf: nodo1"
-
-  # - name: Fence Location 2
-  #   command: "crm -F configure location l_fence_nodo2 fence_nodo2 -inf: nodo2"
-
-  # - name: Fence Location 3
-  #   command: "crm -F configure location l_fence_nodo3 fence_nodo3 -inf: nodo3"
-
+  
   - name: Commit
     command: "crm -F configure commit"
 
