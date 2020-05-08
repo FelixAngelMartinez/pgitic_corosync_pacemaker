@@ -17,7 +17,8 @@
 ### Pub keys ###
 *.pub
 
-### Archivos de clave
+### Archivos de clave ###
 *authkey
+
 # End of https://www.gitignore.io/api/ansible,vagrant
 
