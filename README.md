@@ -4,7 +4,7 @@ Project for the subject called Planing and Management of ITC of the Master's deg
 * **Vagrant**
 * **Corosync**
 * **Pacemaker**
-This guide has been made to execute it on **Ubuntu 18.04 LTS**.<br />
+.<br />This guide has been made to execute it on **Ubuntu 18.04 LTS**.<br />
 # Prerequisites
 ## Ansible installation:
 [Official documentation of Ansible's installation](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#)
@@ -31,12 +31,13 @@ $ virtualbox
 # Execution
 **Provision** virtual machines:
 ```
-$ vagrant up --parallel --destroy-on-error
+$ vagrant up --destroy-on-error
 ```
 **Connection** to virtual machines:
 _Nodes_:<br />
-* Master: node-1 
-* Workers: from node-2 to node-3
+* nodo1 
+* nodo2, nodo3 ...
+You can specified it in the Vagrantfile, in the var N_Machines.
 ```
 $ vagrant ssh <node>
 ```
