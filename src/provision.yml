@@ -215,8 +215,8 @@
   - name: Ejecutar script generado
     script: scripts/crm_configure_fence.sh
   
-  - name: Commit
+  - name: Hacemos commit para aplicar los cambios
     command: "crm -F configure commit"
 
-  - name: Up
+  - name: Levantamos las nuevas configuraciones aplicadas
     command: "crm configure up"
